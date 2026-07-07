@@ -36,9 +36,10 @@ return [
     ],
 
     'oirs' => [
-    'key' => env('OIRS_APP_KEY'),
-    'base_url' => env('OIRS_BASE_URL'),
-    'hash_key' => env('OIRS_HASH_KEY'),
+        'key' => env('OIRS_APP_KEY'),
+        'base_url' => env('OIRS_BASE_URL'),
+        'terminal_base_url' => env('OIRS_TERMINAL_BASE_URL', env('OIRS_BASE_URL')),
+        'hash_key' => env('OIRS_HASH_KEY'),
     ],
 
 ];

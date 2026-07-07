@@ -1,0 +1,14 @@
+{
+  "data": {
+    "ipn": "820514468612",
+    "authorization_url": "https://osun.electroniccollectionsecg.com/gateway/checkout/820514468612/checkout"
+  }
+}
+
+
+{
+  "name": "ECG POS",
+  "email": "admin1@example.com",
+  "password": "password123",
+  "password_confirmation": "password123"
+}
