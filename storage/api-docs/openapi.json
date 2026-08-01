@@ -7,6 +7,10 @@
     },
     "servers": [
         {
+            "url": "https://ecg.easinovation.com.ng",
+            "description": "Production API server"
+        },
+        {
             "url": "http://localhost:8000",
             "description": "Local API server"
         }
