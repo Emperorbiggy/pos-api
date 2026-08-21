@@ -16,6 +16,7 @@ final class AuthApiTest extends TestCase
         $registerResponse = $this->postJson('/api/v1/auth/register', [
             'name' => 'ECG POS Admin',
             'email' => 'admin@example.com',
+            'terminal_id' => '1234567890',
             'password' => 'password123',
             'password_confirmation' => 'password123',
         ]);
@@ -27,9 +28,10 @@ final class AuthApiTest extends TestCase
                     'access_token',
                     'token_type',
                     'expires_in',
-                    'user' => ['id', 'name', 'email', 'created_at'],
+                    'user' => ['id', 'name', 'email', 'terminal_id', 'created_at'],
                 ],
-            ]);
+            ])
+            ->assertJsonPath('data.user.terminal_id', '1234567890');
 
         $loginResponse = $this->postJson('/api/v1/auth/login', [
             'email' => 'admin@example.com',
@@ -38,7 +40,8 @@ final class AuthApiTest extends TestCase
 
         $loginResponse
             ->assertOk()
-            ->assertJsonPath('data.token_type', 'bearer');
+            ->assertJsonPath('data.token_type', 'bearer')
+            ->assertJsonPath('data.user.terminal_id', '1234567890');
 
         $token = $loginResponse->json('data.access_token');
 

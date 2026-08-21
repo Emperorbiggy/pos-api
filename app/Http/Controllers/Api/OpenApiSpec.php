@@ -13,6 +13,7 @@ use OpenApi\Attributes as OA;
         description: 'Production REST API for JWT authentication, OIRS terminal validation, payment notification, and invoice generation.'
     ),
     servers: [
+        new OA\Server(url: 'https://ecg.easinovation.com.ng', description: 'Production API server'),
         new OA\Server(url: 'http://localhost:8000', description: 'Local API server'),
     ],
     security: [
@@ -35,16 +36,18 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'id', type: 'integer', example: 1),
         new OA\Property(property: 'name', type: 'string', example: 'ECG POS Admin'),
         new OA\Property(property: 'email', type: 'string', format: 'email', example: 'admin@example.com'),
+        new OA\Property(property: 'terminal_id', type: 'string', maxLength: 50, nullable: true, example: '1234567890'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', nullable: true, example: '2026-07-06T10:30:00+01:00'),
     ]
 )]
 #[OA\Schema(
     schema: 'RegisterRequest',
-    required: ['name', 'email', 'password', 'password_confirmation'],
+    required: ['name', 'email', 'terminal_id', 'password', 'password_confirmation'],
     type: 'object',
     properties: [
         new OA\Property(property: 'name', type: 'string', maxLength: 255, example: 'ECG POS Admin'),
         new OA\Property(property: 'email', type: 'string', format: 'email', maxLength: 255, example: 'admin@example.com'),
+        new OA\Property(property: 'terminal_id', type: 'string', maxLength: 50, example: '1234567890'),
         new OA\Property(property: 'password', type: 'string', minLength: 8, example: 'password123'),
         new OA\Property(property: 'password_confirmation', type: 'string', minLength: 8, example: 'password123'),
     ]

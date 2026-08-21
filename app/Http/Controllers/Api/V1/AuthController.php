@@ -21,7 +21,7 @@ final class AuthController extends Controller
         path: '/api/v1/auth/register',
         operationId: 'authRegister',
         summary: 'Register a user',
-        description: 'Create a new API user and return a JWT. Validation rules: name is required string max 255; email is required unique email max 255; password is required, confirmed, and at least 8 characters.',
+        description: 'Create a new API user and return a JWT. Validation rules: name is required string max 255; email is required unique email max 255; terminal_id is required string max 50; password is required, confirmed, and at least 8 characters.',
         tags: ['Authentication'],
         security: [],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/RegisterRequest')),

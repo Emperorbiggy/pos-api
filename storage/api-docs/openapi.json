@@ -22,7 +22,7 @@
                     "Authentication"
                 ],
                 "summary": "Register a user",
-                "description": "Create a new API user and return a JWT. Validation rules: name is required string max 255; email is required unique email max 255; password is required, confirmed, and at least 8 characters.",
+                "description": "Create a new API user and return a JWT. Validation rules: name is required string max 255; email is required unique email max 255; terminal_id is required string max 50; password is required, confirmed, and at least 8 characters.",
                 "operationId": "authRegister",
                 "requestBody": {
                     "required": true,
@@ -692,6 +692,12 @@
                         "format": "email",
                         "example": "admin@example.com"
                     },
+                    "terminal_id": {
+                        "type": "string",
+                        "example": "1234567890",
+                        "nullable": true,
+                        "maxLength": 50
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
@@ -705,6 +711,7 @@
                 "required": [
                     "name",
                     "email",
+                    "terminal_id",
                     "password",
                     "password_confirmation"
                 ],
@@ -719,6 +726,11 @@
                         "format": "email",
                         "example": "admin@example.com",
                         "maxLength": 255
+                    },
+                    "terminal_id": {
+                        "type": "string",
+                        "example": "1234567890",
+                        "maxLength": 50
                     },
                     "password": {
                         "type": "string",

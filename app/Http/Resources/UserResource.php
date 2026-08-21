@@ -18,6 +18,7 @@ final class UserResource extends JsonResource
             'id' => $this->resource->id,
             'name' => $this->resource->name,
             'email' => $this->resource->email,
+            'terminal_id' => $this->resource->terminal_id,
             'created_at' => $this->resource->created_at?->toIso8601String(),
         ];
     }
