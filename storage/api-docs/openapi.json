@@ -22,7 +22,7 @@
                     "Authentication"
                 ],
                 "summary": "Register a user",
-                "description": "Create a new API user and return a JWT. Validation rules: name is required string max 255; email is required unique email max 255; terminal_id is required string max 50; password is required, confirmed, and at least 8 characters.",
+                "description": "Create a new API user and return a JWT. Validation rules: name is required string max 255; email is required unique email max 255; terminal_id is required, string max 50, and must not already be assigned to another user; password is required, confirmed, and at least 8 characters.",
                 "operationId": "authRegister",
                 "requestBody": {
                     "required": true,
@@ -265,7 +265,7 @@
                     "Authentication"
                 ],
                 "summary": "Refresh token",
-                "description": "Refresh the current JWT and return a new token. Authentication: Bearer token required in the Authorization header.",
+                "description": "Exchange the current JWT for a new one. Authentication: Bearer token required in the Authorization header. The token may already be expired: it stays exchangeable until the refresh window closes (JWT_REFRESH_TTL, measured from when the token was first issued). The old token is blacklisted once refreshed, so each token can only be exchanged once.",
                 "operationId": "authRefresh",
                 "responses": {
                     "200": {
@@ -279,7 +279,7 @@
                         }
                     },
                     "401": {
-                        "description": "Unauthenticated.",
+                        "description": "Token is missing, already used, or past the refresh window. The client must log in again.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -442,6 +442,16 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "OIRS rejected the request on business grounds, e.g. the IPN has already been paid for. The message is relayed verbatim.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
                     "401": {
                         "description": "Unauthenticated.",
                         "content": {
@@ -484,6 +494,16 @@
                     },
                     "500": {
                         "description": "Server error.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "OIRS is unreachable, returned an error of its own, or rejected the credentials this API uses.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -529,6 +549,16 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "OIRS rejected the request on business grounds, e.g. the IPN has already been paid for. The message is relayed verbatim.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
                     "401": {
                         "description": "Unauthenticated.",
                         "content": {
@@ -571,6 +601,16 @@
                     },
                     "500": {
                         "description": "Server error.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "OIRS is unreachable, returned an error of its own, or rejected the credentials this API uses.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -616,6 +656,16 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "OIRS rejected the request on business grounds, e.g. the IPN has already been paid for. The message is relayed verbatim.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
                     "401": {
                         "description": "Unauthenticated.",
                         "content": {
@@ -665,6 +715,16 @@
                                 }
                             }
                         }
+                    },
+                    "502": {
+                        "description": "OIRS is unreachable, returned an error of its own, or rejected the credentials this API uses.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -693,6 +753,7 @@
                         "example": "admin@example.com"
                     },
                     "terminal_id": {
+                        "description": "POS terminal identifier. Unique across users.",
                         "type": "string",
                         "example": "1234567890",
                         "nullable": true,
@@ -728,6 +789,7 @@
                         "maxLength": 255
                     },
                     "terminal_id": {
+                        "description": "POS terminal identifier. Must not already be assigned to another user.",
                         "type": "string",
                         "example": "1234567890",
                         "maxLength": 50
@@ -926,6 +988,12 @@
                             "reference": {
                                 "type": "string",
                                 "example": "TRX-123456",
+                                "nullable": true
+                            },
+                            "status": {
+                                "description": "Payment status reported by OIRS; the merchant payment record is moved to this value. Null when OIRS returns none.",
+                                "type": "string",
+                                "example": "paid",
                                 "nullable": true
                             }
                         },

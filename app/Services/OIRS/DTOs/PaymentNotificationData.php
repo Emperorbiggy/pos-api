@@ -17,6 +17,8 @@ final readonly class PaymentNotificationData
         public string $terminalId,
         public CarbonImmutable $paidAt,
         public ?string $reference,
+        /** Payment status as reported by OIRS, null when it returns none. */
+        public ?string $status,
         public array $raw,
     ) {}
 }

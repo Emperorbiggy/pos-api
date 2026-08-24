@@ -19,6 +19,7 @@ use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
+use Throwable;
 
 final class OIRSService implements OIRSServiceInterface
 {
@@ -141,6 +142,21 @@ final class OIRSService implements OIRSServiceInterface
     {
         try {
             $response = $this->request($baseUrl)->get($endpoint, $query);
+        } catch (RequestException $exception) {
+            $response = $exception->response;
+            $message = $this->responseMessage($response) ?? 'OIRS returned an unsuccessful HTTP response.';
+
+            $this->logFailure('OIRS HTTP request failed.', [
+                'endpoint' => $endpoint,
+                'status_code' => $response->status(),
+                'query' => $query,
+                'response' => $this->safeResponseBody($response),
+            ]);
+
+            throw new OIRSException($message, $response->status(), context: [
+                'endpoint' => $endpoint,
+                'status_code' => $response->status(),
+            ]);
         } catch (ConnectionException $exception) {
             $this->logFailure('OIRS network request failed.', [
                 'endpoint' => $endpoint,
@@ -371,17 +387,25 @@ final class OIRSService implements OIRSServiceInterface
         string $terminalId,
         CarbonImmutable $paidAt
     ): PaymentNotificationData {
+        // Some OIRS endpoints nest the payload one level deeper.
+        $payload = is_array($data['data'] ?? null) ? $data['data'] : $data;
+
         return new PaymentNotificationData(
-            ipn: $this->stringValue($data['ipn'] ?? $ipn),
-            amountPaid: $this->floatValue($data['amount_paid'] ?? $data['amountPaid'] ?? $amountPaid),
-            terminalId: $this->stringValue($data['terminal_id'] ?? $data['terminalId'] ?? $terminalId),
+            ipn: $this->stringValue($payload['ipn'] ?? $data['ipn'] ?? $ipn),
+            amountPaid: $this->floatValue($payload['amount_paid'] ?? $payload['amountPaid'] ?? $amountPaid),
+            terminalId: $this->stringValue($payload['terminal_id'] ?? $payload['terminalId'] ?? $terminalId),
             paidAt: $paidAt,
             reference: $this->nullableString(
-                $data['reference']
-                    ?? $data['payment_reference']
-                    ?? $data['transaction_reference']
+                $payload['reference']
+                    ?? $payload['payment_reference']
+                    ?? $payload['transaction_reference']
                     ?? null
             ),
+            // Only a string status is meaningful here. The envelope's own
+            // "status" is a boolean success flag, not the payment's state.
+            status: is_string($payload['status'] ?? null)
+                ? $this->nullableString($payload['status'])
+                : null,
             raw: $data,
         );
     }
@@ -405,10 +429,30 @@ final class OIRSService implements OIRSServiceInterface
             ->acceptJson()
             ->asJson()
             ->timeout(30)
-            ->retry(2, 500)
+            // throw: false so a failed response comes back to us instead of
+            // escaping as an unhandled RequestException; the $response->failed()
+            // branches below turn it into an OIRSException carrying the upstream
+            // message and status.
+            ->retry(2, 500, fn (Throwable $exception): bool => $this->shouldRetry($exception), throw: false)
             ->withHeaders([
                 'X-APP-KEY' => $this->appKey(),
             ]);
+    }
+
+    /**
+     * Only transient failures are worth retrying. A 4xx is OIRS stating a
+     * business fact ("already paid for"), and repeating the call cannot change
+     * it: it just delays the response and, on payment-notification, risks
+     * sending the same notification more than once.
+     */
+    private function shouldRetry(Throwable $exception): bool
+    {
+        if ($exception instanceof ConnectionException) {
+            return true;
+        }
+
+        return $exception instanceof RequestException
+            && $exception->response->serverError();
     }
 
     private function baseUrl(): string

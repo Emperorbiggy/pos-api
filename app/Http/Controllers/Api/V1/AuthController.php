@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use OpenApi\Attributes as OA;
+use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 
 final class AuthController extends Controller
 {
@@ -21,7 +22,7 @@ final class AuthController extends Controller
         path: '/api/v1/auth/register',
         operationId: 'authRegister',
         summary: 'Register a user',
-        description: 'Create a new API user and return a JWT. Validation rules: name is required string max 255; email is required unique email max 255; terminal_id is required string max 50; password is required, confirmed, and at least 8 characters.',
+        description: 'Create a new API user and return a JWT. Validation rules: name is required string max 255; email is required unique email max 255; terminal_id is required, string max 50, and must not already be assigned to another user; password is required, confirmed, and at least 8 characters.',
         tags: ['Authentication'],
         security: [],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/RegisterRequest')),
@@ -34,12 +35,14 @@ final class AuthController extends Controller
             new OA\Response(response: 500, description: 'Server error.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
         ]
     )]
-    public function register(RegisterRequest $request): AuthTokenResource
+    public function register(RegisterRequest $request): JsonResponse
     {
         $user = User::query()->create($request->validated());
         $token = auth('api')->login($user);
 
-        return new AuthTokenResource($this->tokenPayload($token, $user));
+        return (new AuthTokenResource($this->tokenPayload($token, $user)))
+            ->response()
+            ->setStatusCode(Response::HTTP_CREATED);
     }
 
     #[OA\Post(
@@ -105,23 +108,30 @@ final class AuthController extends Controller
         path: '/api/v1/auth/refresh',
         operationId: 'authRefresh',
         summary: 'Refresh token',
-        description: 'Refresh the current JWT and return a new token. Authentication: Bearer token required in the Authorization header.',
+        description: 'Exchange the current JWT for a new one. Authentication: Bearer token required in the Authorization header. The token may already be expired: it stays exchangeable until the refresh window closes (JWT_REFRESH_TTL, measured from when the token was first issued). The old token is blacklisted once refreshed, so each token can only be exchanged once.',
         tags: ['Authentication'],
         security: [['bearerAuth' => []]],
         responses: [
             new OA\Response(response: 200, description: 'Token refreshed successfully.', content: new OA\JsonContent(ref: '#/components/schemas/AuthTokenResponse')),
-            new OA\Response(response: 401, description: 'Unauthenticated.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 401, description: 'Token is missing, already used, or past the refresh window. The client must log in again.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
             new OA\Response(response: 403, description: 'Forbidden.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
             new OA\Response(response: 404, description: 'Not found.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
             new OA\Response(response: 422, description: 'Validation error.', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
             new OA\Response(response: 500, description: 'Server error.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
         ]
     )]
-    public function refresh(): AuthTokenResource
+    public function refresh(): AuthTokenResource|JsonResponse
     {
+        try {
+            $token = auth('api')->refresh();
+        } catch (JWTException) {
+            return response()->json([
+                'message' => 'Token is invalid, has already been refreshed, or is past the refresh window. Please log in again.',
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
         /** @var User $user */
-        $user = auth('api')->user();
-        $token = auth('api')->refresh();
+        $user = auth('api')->setToken($token)->user();
 
         return new AuthTokenResource($this->tokenPayload($token, $user));
     }

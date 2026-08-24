@@ -10,9 +10,12 @@ Route::prefix('auth')->group(function (): void {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
 
+    // Deliberately outside auth:api: refresh accepts an already-expired access
+    // token, which the guard would reject before the controller could run.
+    Route::post('refresh', [AuthController::class, 'refresh']);
+
     Route::middleware('auth:api')->group(function (): void {
         Route::post('logout', [AuthController::class, 'logout']);
-        Route::post('refresh', [AuthController::class, 'refresh']);
         Route::get('me', [AuthController::class, 'me']);
     });
 });

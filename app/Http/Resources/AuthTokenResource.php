@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Http\Response;
 
 final class AuthTokenResource extends JsonResource
 {
@@ -22,12 +20,5 @@ final class AuthTokenResource extends JsonResource
             'expires_in' => $this->resource['expires_in'],
             'user' => new UserResource($this->resource['user']),
         ];
-    }
-
-    public function withResponse(Request $request, JsonResponse $response): void
-    {
-        if ($request->is('api/v1/auth/register')) {
-            $response->setStatusCode(Response::HTTP_CREATED);
-        }
     }
 }

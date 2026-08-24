@@ -24,6 +24,7 @@ final class PaymentNotificationResource extends JsonResource
             'terminal_id' => $payment->terminalId,
             'paid_at' => $payment->paidAt->toIso8601String(),
             'reference' => $payment->reference,
+            'status' => $payment->status,
         ];
     }
 }

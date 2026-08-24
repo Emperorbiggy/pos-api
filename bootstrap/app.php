@@ -8,6 +8,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\HandleCors;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Validation\ValidationException;
 
@@ -40,9 +41,18 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
+            // Relay the statuses that describe the caller's request, so a POS can
+            // act on them. Anything else — OIRS rejecting OUR app key, OIRS being
+            // down, no status at all — is an upstream problem the caller can do
+            // nothing about, and must not be dressed up as their fault: relaying
+            // a 401 here would read as an expired JWT and log the cashier out.
+            $relayable = [400, 404, 409, 422];
+
             return response()->json([
                 'message' => $exception->getMessage(),
-            ], $exception->getCode() >= 400 ? $exception->getCode() : 502);
+            ], in_array($exception->getCode(), $relayable, true)
+                ? $exception->getCode()
+                : Response::HTTP_BAD_GATEWAY);
         });
 
         $exceptions->render(function (AuthenticationException $exception, Request $request) {

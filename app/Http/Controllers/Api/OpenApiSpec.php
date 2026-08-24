@@ -36,7 +36,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'id', type: 'integer', example: 1),
         new OA\Property(property: 'name', type: 'string', example: 'ECG POS Admin'),
         new OA\Property(property: 'email', type: 'string', format: 'email', example: 'admin@example.com'),
-        new OA\Property(property: 'terminal_id', type: 'string', maxLength: 50, nullable: true, example: '1234567890'),
+        new OA\Property(property: 'terminal_id', description: 'POS terminal identifier. Unique across users.', type: 'string', maxLength: 50, nullable: true, example: '1234567890'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', nullable: true, example: '2026-07-06T10:30:00+01:00'),
     ]
 )]
@@ -47,7 +47,7 @@ use OpenApi\Attributes as OA;
     properties: [
         new OA\Property(property: 'name', type: 'string', maxLength: 255, example: 'ECG POS Admin'),
         new OA\Property(property: 'email', type: 'string', format: 'email', maxLength: 255, example: 'admin@example.com'),
-        new OA\Property(property: 'terminal_id', type: 'string', maxLength: 50, example: '1234567890'),
+        new OA\Property(property: 'terminal_id', description: 'POS terminal identifier. Must not already be assigned to another user.', type: 'string', maxLength: 50, example: '1234567890'),
         new OA\Property(property: 'password', type: 'string', minLength: 8, example: 'password123'),
         new OA\Property(property: 'password_confirmation', type: 'string', minLength: 8, example: 'password123'),
     ]
@@ -128,6 +128,7 @@ use OpenApi\Attributes as OA;
             new OA\Property(property: 'terminal_id', type: 'string', example: '1234567890'),
             new OA\Property(property: 'paid_at', type: 'string', format: 'date-time', example: '2026-07-06T10:30:00+01:00'),
             new OA\Property(property: 'reference', type: 'string', nullable: true, example: 'TRX-123456'),
+            new OA\Property(property: 'status', description: 'Payment status reported by OIRS; the merchant payment record is moved to this value. Null when OIRS returns none.', type: 'string', nullable: true, example: 'paid'),
         ]),
     ]
 )]
