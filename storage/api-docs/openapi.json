@@ -733,6 +733,131 @@
                     }
                 ]
             }
+        },
+        "/api/v1/payments": {
+            "get": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "List payments",
+                "description": "Return the authenticated merchant's payments, newest first. Only the caller's own payments are ever returned. Authentication: Bearer token required. Optional filters: status, terminal_id, ipn. Page size is controlled by per_page (1-100, default 25).",
+                "operationId": "listPayments",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Only payments with this status, e.g. pending or paid.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 50
+                        },
+                        "example": "pending"
+                    },
+                    {
+                        "name": "terminal_id",
+                        "in": "query",
+                        "description": "Only payments collected on this terminal.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 50
+                        },
+                        "example": "204401PG"
+                    },
+                    {
+                        "name": "ipn",
+                        "in": "query",
+                        "description": "Only the payment for this IPN.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 50
+                        },
+                        "example": "331622459317"
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Results per page.",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 25,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number.",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payments listed successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaymentCollectionResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -1062,6 +1187,173 @@
                 },
                 "type": "object"
             },
+            "Payment": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "ipn": {
+                        "type": "string",
+                        "example": "331622459317"
+                    },
+                    "terminal_id": {
+                        "type": "string",
+                        "example": "204401PG"
+                    },
+                    "status": {
+                        "description": "Starts as pending at validation, then moves to whatever OIRS reports when the terminal sends its payment notification.",
+                        "type": "string",
+                        "example": "pending"
+                    },
+                    "amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 12000
+                    },
+                    "total_amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 12000
+                    },
+                    "amount_paid": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 0
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Osun State Harmonised Bill",
+                        "nullable": true
+                    },
+                    "reference": {
+                        "type": "string",
+                        "example": "TRX-556677",
+                        "nullable": true
+                    },
+                    "paid_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-08-24T10:30:00+01:00",
+                        "nullable": true
+                    },
+                    "customer": {
+                        "properties": {
+                            "id": {
+                                "type": "string",
+                                "example": "454368",
+                                "nullable": true
+                            },
+                            "ipn": {
+                                "type": "string",
+                                "example": null,
+                                "nullable": true
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "OLUJIDE JEREMIAH AMBEE",
+                                "nullable": true
+                            },
+                            "email": {
+                                "type": "string",
+                                "example": null,
+                                "nullable": true
+                            },
+                            "phone": {
+                                "type": "string",
+                                "example": "07050710801",
+                                "nullable": true
+                            },
+                            "address": {
+                                "type": "string",
+                                "example": "ZY1, BOLORUNDURO OKE IYANU, ILESA.",
+                                "nullable": true
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-08-24T10:00:00+01:00",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-08-24T10:30:00+01:00",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "PaymentCollectionResponse": {
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Payment"
+                        }
+                    },
+                    "links": {
+                        "properties": {
+                            "first": {
+                                "type": "string",
+                                "example": "https://ecg.easinovation.com.ng/api/v1/payments?page=1",
+                                "nullable": true
+                            },
+                            "last": {
+                                "type": "string",
+                                "example": "https://ecg.easinovation.com.ng/api/v1/payments?page=4",
+                                "nullable": true
+                            },
+                            "prev": {
+                                "type": "string",
+                                "example": null,
+                                "nullable": true
+                            },
+                            "next": {
+                                "type": "string",
+                                "example": "https://ecg.easinovation.com.ng/api/v1/payments?page=2",
+                                "nullable": true
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "meta": {
+                        "properties": {
+                            "current_page": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "from": {
+                                "type": "integer",
+                                "example": 1,
+                                "nullable": true
+                            },
+                            "last_page": {
+                                "type": "integer",
+                                "example": 4
+                            },
+                            "per_page": {
+                                "type": "integer",
+                                "example": 25
+                            },
+                            "to": {
+                                "type": "integer",
+                                "example": 25,
+                                "nullable": true
+                            },
+                            "total": {
+                                "type": "integer",
+                                "example": 87
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
             "MessageResponse": {
                 "properties": {
                     "message": {
@@ -1122,6 +1414,10 @@
         {
             "name": "OIRS",
             "description": "OIRS"
+        },
+        {
+            "name": "Payments",
+            "description": "Payments"
         }
     ]
 }

@@ -155,6 +155,53 @@ use OpenApi\Attributes as OA;
     ]
 )]
 #[OA\Schema(
+    schema: 'Payment',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'integer', example: 1),
+        new OA\Property(property: 'ipn', type: 'string', example: '331622459317'),
+        new OA\Property(property: 'terminal_id', type: 'string', example: '204401PG'),
+        new OA\Property(property: 'status', description: 'Starts as pending at validation, then moves to whatever OIRS reports when the terminal sends its payment notification.', type: 'string', example: 'pending'),
+        new OA\Property(property: 'amount', type: 'number', format: 'float', example: 12000),
+        new OA\Property(property: 'total_amount', type: 'number', format: 'float', example: 12000),
+        new OA\Property(property: 'amount_paid', type: 'number', format: 'float', example: 0),
+        new OA\Property(property: 'description', type: 'string', nullable: true, example: 'Osun State Harmonised Bill'),
+        new OA\Property(property: 'reference', type: 'string', nullable: true, example: 'TRX-556677'),
+        new OA\Property(property: 'paid_at', type: 'string', format: 'date-time', nullable: true, example: '2026-08-24T10:30:00+01:00'),
+        new OA\Property(property: 'customer', type: 'object', properties: [
+            new OA\Property(property: 'id', type: 'string', nullable: true, example: '454368'),
+            new OA\Property(property: 'ipn', type: 'string', nullable: true, example: null),
+            new OA\Property(property: 'name', type: 'string', nullable: true, example: 'OLUJIDE JEREMIAH AMBEE'),
+            new OA\Property(property: 'email', type: 'string', nullable: true, example: null),
+            new OA\Property(property: 'phone', type: 'string', nullable: true, example: '07050710801'),
+            new OA\Property(property: 'address', type: 'string', nullable: true, example: 'ZY1, BOLORUNDURO OKE IYANU, ILESA.'),
+        ]),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', nullable: true, example: '2026-08-24T10:00:00+01:00'),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', nullable: true, example: '2026-08-24T10:30:00+01:00'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'PaymentCollectionResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/Payment')),
+        new OA\Property(property: 'links', type: 'object', properties: [
+            new OA\Property(property: 'first', type: 'string', nullable: true, example: 'https://ecg.easinovation.com.ng/api/v1/payments?page=1'),
+            new OA\Property(property: 'last', type: 'string', nullable: true, example: 'https://ecg.easinovation.com.ng/api/v1/payments?page=4'),
+            new OA\Property(property: 'prev', type: 'string', nullable: true, example: null),
+            new OA\Property(property: 'next', type: 'string', nullable: true, example: 'https://ecg.easinovation.com.ng/api/v1/payments?page=2'),
+        ]),
+        new OA\Property(property: 'meta', type: 'object', properties: [
+            new OA\Property(property: 'current_page', type: 'integer', example: 1),
+            new OA\Property(property: 'from', type: 'integer', nullable: true, example: 1),
+            new OA\Property(property: 'last_page', type: 'integer', example: 4),
+            new OA\Property(property: 'per_page', type: 'integer', example: 25),
+            new OA\Property(property: 'to', type: 'integer', nullable: true, example: 25),
+            new OA\Property(property: 'total', type: 'integer', example: 87),
+        ]),
+    ]
+)]
+#[OA\Schema(
     schema: 'MessageResponse',
     type: 'object',
     properties: [

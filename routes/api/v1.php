@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\OIRSController;
+use App\Http\Controllers\Api\V1\PaymentController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function (): void {
@@ -21,6 +22,8 @@ Route::prefix('auth')->group(function (): void {
 });
 
 Route::middleware('auth:api')->group(function (): void {
+    Route::get('payments', [PaymentController::class, 'index']);
+
     Route::post('validate-ipn', [OIRSController::class, 'validateIpn']);
     Route::post('payment-notification', [OIRSController::class, 'paymentNotification']);
     Route::post('invoices', [OIRSController::class, 'generateInvoice']);
