@@ -413,6 +413,83 @@
                 ]
             }
         },
+        "/api/v1/auth/profile": {
+            "patch": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Update profile",
+                "description": "Update the authenticated merchant's name and/or terminal id. Authentication: Bearer token required in the Authorization header. Both fields are optional, so either can be changed on its own, but neither may be sent blank. Validation rules: name is string max 255; terminal_id is string max 50 and must not already belong to another merchant. Changing the terminal id does not alter payments already recorded, which keep the terminal they were collected on.",
+                "operationId": "authUpdateProfile",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateProfileRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profile updated successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error, e.g. the terminal id already belongs to another merchant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/validate-ipn": {
             "post": {
                 "tags": [
@@ -1183,6 +1260,23 @@
                             }
                         },
                         "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "UpdateProfileRequest": {
+                "description": "Send only the fields you want to change; omitted fields are left as they are.",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "ECG POS Admin",
+                        "maxLength": 255
+                    },
+                    "terminal_id": {
+                        "description": "Must not already belong to another merchant.",
+                        "type": "string",
+                        "example": "204401PG",
+                        "maxLength": 50
                     }
                 },
                 "type": "object"

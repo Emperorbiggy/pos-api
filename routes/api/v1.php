@@ -18,6 +18,7 @@ Route::prefix('auth')->group(function (): void {
     Route::middleware('auth:api')->group(function (): void {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
+        Route::match(['put', 'patch'], 'profile', [AuthController::class, 'updateProfile']);
     });
 });
 

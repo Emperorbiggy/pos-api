@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\UpdateProfileRequest;
 use App\Http\Resources\AuthTokenResource;
 use App\Http\Resources\UserResource;
 use App\Models\User;
@@ -155,6 +156,32 @@ final class AuthController extends Controller
     public function me(Request $request): UserResource
     {
         return new UserResource($request->user('api'));
+    }
+
+    #[OA\Patch(
+        path: '/api/v1/auth/profile',
+        operationId: 'authUpdateProfile',
+        summary: 'Update profile',
+        description: 'Update the authenticated merchant\'s name and/or terminal id. Authentication: Bearer token required in the Authorization header. Both fields are optional, so either can be changed on its own, but neither may be sent blank. Validation rules: name is string max 255; terminal_id is string max 50 and must not already belong to another merchant. Changing the terminal id does not alter payments already recorded, which keep the terminal they were collected on.',
+        tags: ['Authentication'],
+        security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/UpdateProfileRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Profile updated successfully.', content: new OA\JsonContent(ref: '#/components/schemas/UserResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 403, description: 'Forbidden.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error, e.g. the terminal id already belongs to another merchant.', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
+    public function updateProfile(UpdateProfileRequest $request): UserResource
+    {
+        /** @var User $user */
+        $user = $request->user('api');
+
+        $user->update($request->validated());
+
+        return new UserResource($user->refresh());
     }
 
     /**

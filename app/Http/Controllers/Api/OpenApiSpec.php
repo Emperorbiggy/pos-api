@@ -155,6 +155,15 @@ use OpenApi\Attributes as OA;
     ]
 )]
 #[OA\Schema(
+    schema: 'UpdateProfileRequest',
+    description: 'Send only the fields you want to change; omitted fields are left as they are.',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'name', type: 'string', maxLength: 255, example: 'ECG POS Admin'),
+        new OA\Property(property: 'terminal_id', description: 'Must not already belong to another merchant.', type: 'string', maxLength: 50, example: '204401PG'),
+    ]
+)]
+#[OA\Schema(
     schema: 'Payment',
     type: 'object',
     properties: [
