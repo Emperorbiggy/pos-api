@@ -23,6 +23,7 @@ final class PaymentNotificationRequest extends FormRequest
             'amount_paid' => ['required', 'numeric', 'gt:0'],
             'terminal_id' => ['required', 'string', 'max:50'],
             'paid_at' => ['required', 'date'],
+            'location' => ['sometimes', 'nullable', 'string', 'max:255'],
         ];
     }
 }

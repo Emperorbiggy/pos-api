@@ -21,6 +21,7 @@ final class ValidateIpnRequest extends FormRequest
         return [
             'ipn' => ['required', 'string', 'max:50'],
             'terminal_id' => ['required', 'string', 'max:50'],
+            'location' => ['sometimes', 'nullable', 'string', 'max:255'],
         ];
     }
 }

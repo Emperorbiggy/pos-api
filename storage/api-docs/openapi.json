@@ -1079,6 +1079,13 @@
                         "type": "string",
                         "example": "1234567890",
                         "maxLength": 50
+                    },
+                    "location": {
+                        "description": "Optional. Where the terminal is, recorded against the payment. Free text, so GPS coordinates or a place name both work. Not forwarded to OIRS.",
+                        "type": "string",
+                        "example": "Ilesa, Osun State",
+                        "nullable": true,
+                        "maxLength": 255
                     }
                 },
                 "type": "object"
@@ -1165,6 +1172,13 @@
                         "type": "string",
                         "format": "date-time",
                         "example": "2026-07-06 10:30:00"
+                    },
+                    "location": {
+                        "description": "Optional. Where the payment was taken. Free text, so GPS coordinates or a place name both work. Not forwarded to OIRS. Omitting it leaves any location already recorded intact.",
+                        "type": "string",
+                        "example": "Ilesa, Osun State",
+                        "nullable": true,
+                        "maxLength": 255
                     }
                 },
                 "type": "object"
@@ -1298,6 +1312,12 @@
                     "terminal_id": {
                         "type": "string",
                         "example": "204401PG"
+                    },
+                    "location": {
+                        "description": "Where the terminal reported it was when the payment was taken. Null when the device reported none.",
+                        "type": "string",
+                        "example": "Ilesa, Osun State",
+                        "nullable": true
                     },
                     "status": {
                         "description": "Starts as pending at validation, then moves to whatever OIRS reports when the terminal sends its payment notification.",

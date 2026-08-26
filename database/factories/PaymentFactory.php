@@ -26,6 +26,7 @@ final class PaymentFactory extends Factory
             'user_id' => User::factory(),
             'ipn' => (string) fake()->unique()->numerify('############'),
             'terminal_id' => (string) fake()->bothify('######??'),
+            'location' => fake()->city().', Osun State',
             'status' => Payment::STATUS_PENDING,
             'amount' => $amount,
             'total_amount' => $amount,

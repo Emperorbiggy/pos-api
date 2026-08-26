@@ -51,7 +51,7 @@ final class OIRSController extends Controller
 
         /** @var User $merchant */
         $merchant = $request->user('api');
-        $this->payments->recordValidation($merchant, $validation);
+        $this->payments->recordValidation($merchant, $validation, $validated['location'] ?? null);
 
         return new PaymentValidationResource($validation);
     }
@@ -88,7 +88,7 @@ final class OIRSController extends Controller
 
         /** @var User $merchant */
         $merchant = $request->user('api');
-        $this->payments->recordNotification($merchant, $notification);
+        $this->payments->recordNotification($merchant, $notification, $validated['location'] ?? null);
 
         return new PaymentNotificationResource($notification);
     }

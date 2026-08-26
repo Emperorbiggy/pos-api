@@ -26,6 +26,7 @@ final class Payment extends Model
         'user_id',
         'ipn',
         'terminal_id',
+        'location',
         'status',
         'amount',
         'total_amount',

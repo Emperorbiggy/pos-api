@@ -22,6 +22,7 @@ final class PaymentResource extends JsonResource
             'id' => $payment->id,
             'ipn' => $payment->ipn,
             'terminal_id' => $payment->terminal_id,
+            'location' => $payment->location,
             'status' => $payment->status,
             'amount' => $payment->amount,
             'total_amount' => $payment->total_amount,

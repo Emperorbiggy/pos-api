@@ -134,6 +134,71 @@ final class PaymentLedgerTest extends TestCase
         $this->assertSame('pending', $second->payments()->sole()->status);
     }
 
+    public function test_a_location_sent_at_validation_is_recorded(): void
+    {
+        $merchant = User::factory()->create(['terminal_id' => '204401PG']);
+
+        $this->fakeOirs();
+        $this->validateIpn($merchant, location: 'Ilesa, Osun State')->assertOk();
+
+        $this->assertSame('Ilesa, Osun State', Payment::query()->sole()->location);
+    }
+
+    public function test_a_location_sent_with_the_notification_is_recorded(): void
+    {
+        $merchant = User::factory()->create(['terminal_id' => '204401PG']);
+
+        $this->fakeOirs(notification: ['status' => 'paid', 'amount_paid' => 12000]);
+
+        $this->validateIpn($merchant)->assertOk();
+        $this->assertNull(Payment::query()->sole()->location);
+
+        $this->notifyPayment($merchant, location: 'Osogbo, Osun State')->assertOk();
+
+        $payment = Payment::query()->sole();
+        $this->assertSame('Osogbo, Osun State', $payment->location);
+        $this->assertSame('paid', $payment->status);
+    }
+
+    public function test_a_notification_without_a_location_keeps_the_recorded_one(): void
+    {
+        $merchant = User::factory()->create(['terminal_id' => '204401PG']);
+
+        $this->fakeOirs(notification: ['status' => 'paid']);
+
+        $this->validateIpn($merchant, location: 'Ilesa, Osun State')->assertOk();
+        $this->notifyPayment($merchant)->assertOk();
+
+        // A device that cannot get a fix must not erase where we already knew it was.
+        $this->assertSame('Ilesa, Osun State', Payment::query()->sole()->location);
+    }
+
+    public function test_the_location_is_never_forwarded_to_oirs(): void
+    {
+        $merchant = User::factory()->create(['terminal_id' => '204401PG']);
+
+        $this->fakeOirs(notification: ['status' => 'paid']);
+
+        $this->validateIpn($merchant, location: 'Ilesa, Osun State')->assertOk();
+        $this->notifyPayment($merchant, location: 'Ilesa, Osun State')->assertOk();
+
+        // location is our own bookkeeping; OIRS has no such field.
+        Http::assertSent(function ($request) {
+            return ! array_key_exists('location', (array) $request->data())
+                && ! str_contains($request->url(), 'location=');
+        });
+    }
+
+    public function test_an_over_long_location_is_rejected(): void
+    {
+        $merchant = User::factory()->create(['terminal_id' => '204401PG']);
+
+        $this->fakeOirs();
+        $this->validateIpn($merchant, location: str_repeat('a', 256))
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('location');
+    }
+
     public function test_a_failed_validation_records_nothing(): void
     {
         $merchant = User::factory()->create(['terminal_id' => '204401PG']);
@@ -187,24 +252,26 @@ final class PaymentLedgerTest extends TestCase
         ]);
     }
 
-    private function validateIpn(User $merchant): TestResponse
+    private function validateIpn(User $merchant, ?string $location = null): TestResponse
     {
         return $this->asMerchant($merchant)
-            ->postJson('/api/v1/validate-ipn', [
+            ->postJson('/api/v1/validate-ipn', array_filter([
                 'ipn' => self::IPN,
                 'terminal_id' => $merchant->terminal_id,
-            ]);
+                'location' => $location,
+            ], fn ($value) => $value !== null));
     }
 
-    private function notifyPayment(User $merchant, float $amount = 12000): TestResponse
+    private function notifyPayment(User $merchant, float $amount = 12000, ?string $location = null): TestResponse
     {
         return $this->asMerchant($merchant)
-            ->postJson('/api/v1/payment-notification', [
+            ->postJson('/api/v1/payment-notification', array_filter([
                 'ipn' => self::IPN,
                 'amount_paid' => $amount,
                 'terminal_id' => $merchant->terminal_id,
                 'paid_at' => '2026-08-24 10:30:00',
-            ]);
+                'location' => $location,
+            ], fn ($value) => $value !== null));
     }
 
     private function asMerchant(User $merchant): self

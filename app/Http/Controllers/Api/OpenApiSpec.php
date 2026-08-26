@@ -88,6 +88,7 @@ use OpenApi\Attributes as OA;
     properties: [
         new OA\Property(property: 'ipn', type: 'string', maxLength: 50, example: '931713074597'),
         new OA\Property(property: 'terminal_id', type: 'string', maxLength: 50, example: '1234567890'),
+        new OA\Property(property: 'location', description: 'Optional. Where the terminal is, recorded against the payment. Free text, so GPS coordinates or a place name both work. Not forwarded to OIRS.', type: 'string', maxLength: 255, nullable: true, example: 'Ilesa, Osun State'),
     ]
 )]
 #[OA\Schema(
@@ -117,6 +118,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'amount_paid', type: 'number', format: 'float', minimum: 0.01, example: 100),
         new OA\Property(property: 'terminal_id', type: 'string', maxLength: 50, example: '1234567890'),
         new OA\Property(property: 'paid_at', type: 'string', format: 'date-time', example: '2026-07-06 10:30:00'),
+        new OA\Property(property: 'location', description: 'Optional. Where the payment was taken. Free text, so GPS coordinates or a place name both work. Not forwarded to OIRS. Omitting it leaves any location already recorded intact.', type: 'string', maxLength: 255, nullable: true, example: 'Ilesa, Osun State'),
     ]
 )]
 #[OA\Schema(
@@ -171,6 +173,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'id', type: 'integer', example: 1),
         new OA\Property(property: 'ipn', type: 'string', example: '331622459317'),
         new OA\Property(property: 'terminal_id', type: 'string', example: '204401PG'),
+        new OA\Property(property: 'location', description: 'Where the terminal reported it was when the payment was taken. Null when the device reported none.', type: 'string', nullable: true, example: 'Ilesa, Osun State'),
         new OA\Property(property: 'status', description: 'Starts as pending at validation, then moves to whatever OIRS reports when the terminal sends its payment notification.', type: 'string', example: 'pending'),
         new OA\Property(property: 'amount', type: 'number', format: 'float', example: 12000),
         new OA\Property(property: 'total_amount', type: 'number', format: 'float', example: 12000),
