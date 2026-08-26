@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use Tests\TestCase;
 
 final class AuthApiTest extends TestCase
@@ -148,6 +149,23 @@ final class AuthApiTest extends TestCase
         $this->withHeader('Authorization', 'Bearer '.$token)
             ->getJson('/api/v1/auth/me')
             ->assertUnauthorized();
+    }
+
+    public function test_refresh_rejects_a_token_whose_account_no_longer_exists(): void
+    {
+        $user = User::factory()->create();
+        $token = JWTAuth::fromUser($user);
+
+        // Valid signature, but the subject is gone. This is what a token minted
+        // against another database with the same JWT_SECRET looks like.
+        $user->forceDelete();
+
+        $this->isolateNextRequest();
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/v1/auth/refresh')
+            ->assertUnauthorized()
+            ->assertJsonPath('message', 'The account this token belongs to no longer exists. Please log in again.');
     }
 
     public function test_refresh_rejects_a_request_with_no_token(): void

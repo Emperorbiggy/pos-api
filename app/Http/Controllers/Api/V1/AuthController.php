@@ -114,7 +114,7 @@ final class AuthController extends Controller
         security: [['bearerAuth' => []]],
         responses: [
             new OA\Response(response: 200, description: 'Token refreshed successfully.', content: new OA\JsonContent(ref: '#/components/schemas/AuthTokenResponse')),
-            new OA\Response(response: 401, description: 'Token is missing, already used, or past the refresh window. The client must log in again.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 401, description: 'Token is missing, already used, past the refresh window, or names an account that no longer exists. The client must log in again.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
             new OA\Response(response: 403, description: 'Forbidden.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
             new OA\Response(response: 404, description: 'Not found.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
             new OA\Response(response: 422, description: 'Validation error.', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
@@ -131,8 +131,16 @@ final class AuthController extends Controller
             ], Response::HTTP_UNAUTHORIZED);
         }
 
-        /** @var User $user */
         $user = auth('api')->setToken($token)->user();
+
+        // A token can carry a valid signature and still name nobody: the account
+        // was deleted, or the token was minted against a different database with
+        // the same signing key. Refreshing it must not hand back a session.
+        if (! $user instanceof User) {
+            return response()->json([
+                'message' => 'The account this token belongs to no longer exists. Please log in again.',
+            ], Response::HTTP_UNAUTHORIZED);
+        }
 
         return new AuthTokenResource($this->tokenPayload($token, $user));
     }

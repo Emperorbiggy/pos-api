@@ -283,7 +283,7 @@
                         }
                     },
                     "401": {
-                        "description": "Token is missing, already used, or past the refresh window. The client must log in again.",
+                        "description": "Token is missing, already used, past the refresh window, or names an account that no longer exists. The client must log in again.",
                         "content": {
                             "application/json": {
                                 "schema": {
