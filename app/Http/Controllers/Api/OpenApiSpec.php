@@ -13,7 +13,8 @@ use OpenApi\Attributes as OA;
         description: 'Production REST API for JWT authentication, OIRS terminal validation, payment notification, and invoice generation.'
     ),
     servers: [
-        new OA\Server(url: 'https://ecg.easinovation.com.ng', description: 'Production API server'),
+        new OA\Server(url: 'https://ecgposapi.electroniccollectionsecg.com', description: 'Production API server (ECG)'),
+        new OA\Server(url: 'https://ecg.easinovation.com.ng', description: 'Production API server (Easinovation)'),
         new OA\Server(url: 'http://localhost:8000', description: 'Local API server'),
     ],
     security: [

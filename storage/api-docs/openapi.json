@@ -7,8 +7,12 @@
     },
     "servers": [
         {
+            "url": "https://ecgposapi.electroniccollectionsecg.com",
+            "description": "Production API server (ECG)"
+        },
+        {
             "url": "https://ecg.easinovation.com.ng",
-            "description": "Production API server"
+            "description": "Production API server (Easinovation)"
         },
         {
             "url": "http://localhost:8000",
