@@ -19,6 +19,17 @@ Route::prefix('auth')->group(function (): void {
         Route::post('logout', [AuthController::class, 'logout']);
         Route::get('me', [AuthController::class, 'me']);
         Route::match(['put', 'patch'], 'profile', [AuthController::class, 'updateProfile']);
+
+        // PIN lives apart from registration and from the profile: an account can
+        // exist without one, and a credential change should never ride along
+        // with an ordinary profile edit.
+        Route::post('pin', [AuthController::class, 'createPin']);
+        Route::match(['put', 'patch'], 'pin', [AuthController::class, 'updatePin']);
+
+        // Throttled: a 4 digit PIN is only 10,000 combinations, so an unlimited
+        // endpoint would hand an attacker the PIN in seconds.
+        Route::post('verify-pin', [AuthController::class, 'verifyPin'])
+            ->middleware('throttle:10,1');
     });
 });
 

@@ -18,6 +18,11 @@ class UserFactory extends Factory
     protected static ?string $password;
 
     /**
+     * The current PIN being used by the factory.
+     */
+    protected static ?string $pin;
+
+    /**
      * Define the model's default state.
      *
      * @return array<string, mixed>
@@ -30,8 +35,19 @@ class UserFactory extends Factory
             'terminal_id' => (string) fake()->unique()->numerify('##########'),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            'pin' => static::$pin ??= Hash::make('1234'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /**
+     * A merchant who has registered but not yet created a PIN.
+     */
+    public function withoutPin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'pin' => null,
+        ]);
     }
 
     /**

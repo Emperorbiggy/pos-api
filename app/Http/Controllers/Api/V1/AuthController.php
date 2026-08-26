@@ -5,15 +5,20 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\CreatePinRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\UpdatePinRequest;
 use App\Http\Requests\Auth\UpdateProfileRequest;
+use App\Http\Requests\Auth\VerifyPinRequest;
 use App\Http\Resources\AuthTokenResource;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 use PHPOpenSourceSaver\JWTAuth\Exceptions\JWTException;
 
@@ -190,6 +195,108 @@ final class AuthController extends Controller
         $user->update($request->validated());
 
         return new UserResource($user->refresh());
+    }
+
+    #[OA\Post(
+        path: '/api/v1/auth/pin',
+        operationId: 'authCreatePin',
+        summary: 'Create PIN',
+        description: 'Set the merchant\'s first PIN. Separate from registration, so an account exists before it has a PIN. Returns 409 if a PIN is already set: use PUT /api/v1/auth/pin to change one. Authentication: Bearer token required.',
+        tags: ['Authentication'],
+        security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/CreatePinRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'PIN created.', content: new OA\JsonContent(ref: '#/components/schemas/PinStatusResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 409, description: 'A PIN is already set on this account.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error.', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
+    public function createPin(CreatePinRequest $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user('api');
+
+        if ($user->pin !== null) {
+            return response()->json([
+                'message' => 'A pin is already set on this account. Use PUT /api/v1/auth/pin to change it.',
+            ], Response::HTTP_CONFLICT);
+        }
+
+        $user->update(['pin' => $request->string('pin')->toString()]);
+
+        return response()->json(['data' => ['has_pin' => true]], Response::HTTP_CREATED);
+    }
+
+    #[OA\Put(
+        path: '/api/v1/auth/pin',
+        operationId: 'authUpdatePin',
+        summary: 'Change PIN',
+        description: 'Change an existing PIN. Requires current_pin, so knowing the JWT alone is not enough to replace the PIN. Returns 409 when no PIN is set yet: use POST /api/v1/auth/pin to create one. Authentication: Bearer token required.',
+        tags: ['Authentication'],
+        security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/UpdatePinRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'PIN changed.', content: new OA\JsonContent(ref: '#/components/schemas/PinStatusResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 409, description: 'No PIN has been set on this account yet.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error, including an incorrect current_pin.', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
+    public function updatePin(UpdatePinRequest $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user('api');
+
+        if ($user->pin === null) {
+            return response()->json([
+                'message' => 'No pin has been set on this account yet. Use POST /api/v1/auth/pin to create one.',
+            ], Response::HTTP_CONFLICT);
+        }
+
+        // current_pin only proves the caller knows the old PIN; it is never stored.
+        $user->update(['pin' => $request->string('pin')->toString()]);
+
+        return response()->json(['data' => ['has_pin' => true]]);
+    }
+
+    #[OA\Post(
+        path: '/api/v1/auth/verify-pin',
+        operationId: 'authVerifyPin',
+        summary: 'Verify PIN',
+        description: 'Check a PIN against the authenticated merchant\'s stored PIN. Returns 200 with valid true when it matches, and 422 when it does not. Rate limited to 10 attempts per minute per merchant, so a 4 digit PIN cannot be guessed by brute force. Authentication: Bearer token required.',
+        tags: ['Authentication'],
+        security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/VerifyPinRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'The PIN is correct.', content: new OA\JsonContent(ref: '#/components/schemas/VerifyPinResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 409, description: 'No PIN has been set on this account yet.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 422, description: 'The PIN is incorrect, or no PIN was supplied.', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 429, description: 'Too many attempts. Wait before trying again.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
+    public function verifyPin(VerifyPinRequest $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user('api');
+
+        if ($user->pin === null) {
+            return response()->json([
+                'message' => 'No pin has been set on this account yet. Set one from your profile first.',
+            ], Response::HTTP_CONFLICT);
+        }
+
+        if (! Hash::check($request->string('pin')->toString(), $user->pin)) {
+            throw ValidationException::withMessages([
+                'pin' => 'The pin is incorrect.',
+            ]);
+        }
+
+        return response()->json(['data' => ['valid' => true]]);
     }
 
     /**

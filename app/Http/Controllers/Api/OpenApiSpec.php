@@ -38,6 +38,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'name', type: 'string', example: 'ECG POS Admin'),
         new OA\Property(property: 'email', type: 'string', format: 'email', example: 'admin@example.com'),
         new OA\Property(property: 'terminal_id', description: 'POS terminal identifier. Unique across users.', type: 'string', maxLength: 50, nullable: true, example: '1234567890'),
+        new OA\Property(property: 'has_pin', description: 'Whether a PIN has been created for this account yet.', type: 'boolean', example: true),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', nullable: true, example: '2026-07-06T10:30:00+01:00'),
     ]
 )]
@@ -164,6 +165,51 @@ use OpenApi\Attributes as OA;
     properties: [
         new OA\Property(property: 'name', type: 'string', maxLength: 255, example: 'ECG POS Admin'),
         new OA\Property(property: 'terminal_id', description: 'Must not already belong to another merchant.', type: 'string', maxLength: 50, example: '204401PG'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'CreatePinRequest',
+    required: ['pin'],
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'pin', description: '4 to 6 digits. Stored hashed and never returned.', type: 'string', example: '1234'),
+        new OA\Property(property: 'pin_confirmation', description: 'Optional. When sent it must match pin.', type: 'string', example: '1234'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'UpdatePinRequest',
+    required: ['pin', 'current_pin'],
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'pin', description: 'The new PIN, 4 to 6 digits.', type: 'string', example: '9999'),
+        new OA\Property(property: 'pin_confirmation', description: 'Optional. When sent it must match pin.', type: 'string', example: '9999'),
+        new OA\Property(property: 'current_pin', description: 'The PIN being replaced.', type: 'string', example: '1234'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'PinStatusResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'data', type: 'object', properties: [
+            new OA\Property(property: 'has_pin', type: 'boolean', example: true),
+        ]),
+    ]
+)]
+#[OA\Schema(
+    schema: 'VerifyPinRequest',
+    required: ['pin'],
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'pin', description: 'The PIN to check against the authenticated merchant.', type: 'string', example: '1234'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'VerifyPinResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'data', type: 'object', properties: [
+            new OA\Property(property: 'valid', description: 'Always true. An incorrect PIN returns 422 rather than valid false.', type: 'boolean', example: true),
+        ]),
     ]
 )]
 #[OA\Schema(

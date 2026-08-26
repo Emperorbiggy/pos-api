@@ -494,6 +494,245 @@
                 ]
             }
         },
+        "/api/v1/auth/pin": {
+            "put": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Change PIN",
+                "description": "Change an existing PIN. Requires current_pin, so knowing the JWT alone is not enough to replace the PIN. Returns 409 when no PIN is set yet: use POST /api/v1/auth/pin to create one. Authentication: Bearer token required.",
+                "operationId": "authUpdatePin",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdatePinRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "PIN changed.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PinStatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "No PIN has been set on this account yet.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error, including an incorrect current_pin.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Create PIN",
+                "description": "Set the merchant's first PIN. Separate from registration, so an account exists before it has a PIN. Returns 409 if a PIN is already set: use PUT /api/v1/auth/pin to change one. Authentication: Bearer token required.",
+                "operationId": "authCreatePin",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreatePinRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "PIN created.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PinStatusResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "A PIN is already set on this account.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/verify-pin": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Verify PIN",
+                "description": "Check a PIN against the authenticated merchant's stored PIN. Returns 200 with valid true when it matches, and 422 when it does not. Rate limited to 10 attempts per minute per merchant, so a 4 digit PIN cannot be guessed by brute force. Authentication: Bearer token required.",
+                "operationId": "authVerifyPin",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/VerifyPinRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The PIN is correct.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/VerifyPinResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "No PIN has been set on this account yet.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The PIN is incorrect, or no PIN was supplied.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many attempts. Wait before trying again.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/validate-ipn": {
             "post": {
                 "tags": [
@@ -965,6 +1204,11 @@
                         "nullable": true,
                         "maxLength": 50
                     },
+                    "has_pin": {
+                        "description": "Whether a PIN has been created for this account yet.",
+                        "type": "boolean",
+                        "example": true
+                    },
                     "created_at": {
                         "type": "string",
                         "format": "date-time",
@@ -1295,6 +1539,90 @@
                         "type": "string",
                         "example": "204401PG",
                         "maxLength": 50
+                    }
+                },
+                "type": "object"
+            },
+            "CreatePinRequest": {
+                "required": [
+                    "pin"
+                ],
+                "properties": {
+                    "pin": {
+                        "description": "4 to 6 digits. Stored hashed and never returned.",
+                        "type": "string",
+                        "example": "1234"
+                    },
+                    "pin_confirmation": {
+                        "description": "Optional. When sent it must match pin.",
+                        "type": "string",
+                        "example": "1234"
+                    }
+                },
+                "type": "object"
+            },
+            "UpdatePinRequest": {
+                "required": [
+                    "pin",
+                    "current_pin"
+                ],
+                "properties": {
+                    "pin": {
+                        "description": "The new PIN, 4 to 6 digits.",
+                        "type": "string",
+                        "example": "9999"
+                    },
+                    "pin_confirmation": {
+                        "description": "Optional. When sent it must match pin.",
+                        "type": "string",
+                        "example": "9999"
+                    },
+                    "current_pin": {
+                        "description": "The PIN being replaced.",
+                        "type": "string",
+                        "example": "1234"
+                    }
+                },
+                "type": "object"
+            },
+            "PinStatusResponse": {
+                "properties": {
+                    "data": {
+                        "properties": {
+                            "has_pin": {
+                                "type": "boolean",
+                                "example": true
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "VerifyPinRequest": {
+                "required": [
+                    "pin"
+                ],
+                "properties": {
+                    "pin": {
+                        "description": "The PIN to check against the authenticated merchant.",
+                        "type": "string",
+                        "example": "1234"
+                    }
+                },
+                "type": "object"
+            },
+            "VerifyPinResponse": {
+                "properties": {
+                    "data": {
+                        "properties": {
+                            "valid": {
+                                "description": "Always true. An incorrect PIN returns 422 rather than valid false.",
+                                "type": "boolean",
+                                "example": true
+                            }
+                        },
+                        "type": "object"
                     }
                 },
                 "type": "object"

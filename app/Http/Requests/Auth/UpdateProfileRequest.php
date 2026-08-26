@@ -17,7 +17,8 @@ final class UpdateProfileRequest extends FormRequest
 
     /**
      * Both fields are optional so a caller can change one without resending the
-     * other, but neither may be sent blank.
+     * other, but neither may be sent blank. The PIN is deliberately not here:
+     * it has its own endpoints, so a profile edit can never touch a credential.
      *
      * @return array<string, list<mixed>>
      */
