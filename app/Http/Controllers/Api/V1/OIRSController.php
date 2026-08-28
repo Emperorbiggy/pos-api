@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\OIRS\GenerateInvoiceRequest;
 use App\Http\Requests\OIRS\PaymentNotificationRequest;
 use App\Http\Requests\OIRS\ValidateIpnRequest;
+use App\Http\Resources\InvoiceDetailsResource;
 use App\Http\Resources\InvoiceResource;
 use App\Http\Resources\PaymentNotificationResource;
 use App\Http\Resources\PaymentValidationResource;
@@ -112,6 +113,31 @@ final class OIRSController extends Controller
             new OA\Response(response: 502, description: 'OIRS is unreachable, returned an error of its own, or rejected the credentials this API uses.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
         ]
     )]
+    #[OA\Get(
+        path: '/api/v1/invoices/{ipn}',
+        operationId: 'showInvoice',
+        summary: 'Fetch invoice',
+        description: 'Look up an existing OIRS invoice by its IPN. Served from the OIRS base URL. Authentication: Bearer token required.',
+        tags: ['OIRS'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(name: 'ipn', description: 'The invoice payment number to look up.', in: 'path', required: true, schema: new OA\Schema(type: 'string', maxLength: 50, pattern: '^[A-Za-z0-9\-]{1,50}$'), example: '426878163229'),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Invoice found.', content: new OA\JsonContent(ref: '#/components/schemas/InvoiceDetailsResponse')),
+            new OA\Response(response: 400, description: 'OIRS rejected the request on business grounds. The message is relayed verbatim.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 404, description: 'No invoice exists for that IPN.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error.', content: new OA\JsonContent(ref: '#/components/schemas/ValidationErrorResponse')),
+            new OA\Response(response: 500, description: 'Server error.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+            new OA\Response(response: 502, description: 'OIRS is unreachable, returned an error of its own, or rejected the credentials this API uses.', content: new OA\JsonContent(ref: '#/components/schemas/ErrorResponse')),
+        ]
+    )]
+    public function showInvoice(string $ipn): InvoiceDetailsResource
+    {
+        return new InvoiceDetailsResource($this->oirsService->fetchInvoice($ipn));
+    }
+
     public function generateInvoice(GenerateInvoiceRequest $request): InvoiceResource
     {
         $validated = $request->validated();

@@ -7,6 +7,7 @@ namespace App\Services\OIRS;
 use App\Services\OIRS\Contracts\OIRSServiceInterface;
 use App\Services\OIRS\DTOs\CustomerData;
 use App\Services\OIRS\DTOs\InvoiceData;
+use App\Services\OIRS\DTOs\InvoiceDetailsData;
 use App\Services\OIRS\DTOs\PaymentNotificationData;
 use App\Services\OIRS\DTOs\PaymentValidationData;
 use App\Services\OIRS\Exceptions\OIRSException;
@@ -128,6 +129,28 @@ final class OIRSService implements OIRSServiceInterface
         $data = $this->post(self::GENERATE_INVOICE_ENDPOINT, $payload);
 
         return $this->invoiceData($data);
+    }
+
+    /**
+     * Fetch an existing OIRS invoice by its IPN.
+     *
+     * Uses the main OIRS base URL, not the terminal one: this is a gateway
+     * lookup rather than a terminal operation.
+     *
+     * @throws OIRSException
+     */
+    public function fetchInvoice(string $ipn): InvoiceDetailsData
+    {
+        $ipn = $this->validateRequiredString($ipn, 'ipn');
+
+        $data = $this->get(self::GENERATE_INVOICE_ENDPOINT.'/'.rawurlencode($ipn));
+
+        Log::info('OIRS invoice lookup response', [
+            'ipn' => $ipn,
+            'response' => $data,
+        ]);
+
+        return $this->invoiceDetailsData($data, $ipn);
     }
 
     /**
@@ -419,6 +442,32 @@ final class OIRSService implements OIRSServiceInterface
             ipn: $this->stringValue($data['ipn'] ?? ''),
             authorizationUrl: $this->stringValue($data['authorization_url'] ?? $data['authorizationUrl'] ?? ''),
             raw: $data,
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function invoiceDetailsData(array $data, string $ipn): InvoiceDetailsData
+    {
+        // Tolerate a nested 'data' wrapper, the same way validation responses do.
+        $payload = is_array($data['data'] ?? null) ? $data['data'] : $data;
+
+        $customerPayload = $payload['customer'] ?? $payload['payer'] ?? null;
+
+        return new InvoiceDetailsData(
+            ipn: $this->stringValue($payload['ipn'] ?? $ipn),
+            customer: is_array($customerPayload) ? $this->customerData($customerPayload) : null,
+            status: $this->nullableString($payload['status'] ?? null),
+            amount: $this->floatValue($payload['amount'] ?? 0),
+            totalAmount: $this->floatValue($payload['total_amount'] ?? $payload['totalAmount'] ?? 0),
+            amountPaid: $this->floatValue($payload['amount_paid'] ?? $payload['amountPaid'] ?? 0),
+            description: $this->nullableString($payload['description'] ?? null),
+            authorizationUrl: $this->nullableString($payload['authorization_url'] ?? $payload['authorizationUrl'] ?? null),
+            revenueCode: $this->nullableString($payload['revenue_code'] ?? $payload['revenueCode'] ?? null),
+            agencyCode: $this->nullableString($payload['agency_code'] ?? $payload['agencyCode'] ?? null),
+            paymentType: $this->nullableString($payload['payment_type'] ?? $payload['paymentType'] ?? null),
+            raw: $payload,
         );
     }
 

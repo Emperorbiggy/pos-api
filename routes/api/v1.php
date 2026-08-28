@@ -39,4 +39,6 @@ Route::middleware('auth:api')->group(function (): void {
     Route::post('validate-ipn', [OIRSController::class, 'validateIpn']);
     Route::post('payment-notification', [OIRSController::class, 'paymentNotification']);
     Route::post('invoices', [OIRSController::class, 'generateInvoice']);
+    Route::get('invoices/{ipn}', [OIRSController::class, 'showInvoice'])
+        ->where('ipn', '[A-Za-z0-9\-]{1,50}');
 });

@@ -137,6 +137,32 @@ use OpenApi\Attributes as OA;
     ]
 )]
 #[OA\Schema(
+    schema: 'InvoiceDetailsResponse',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'data', type: 'object', properties: [
+            new OA\Property(property: 'ipn', type: 'string', example: '426878163229'),
+            new OA\Property(property: 'status', type: 'string', nullable: true, example: 'pending'),
+            new OA\Property(property: 'amount', type: 'number', format: 'float', example: 12000),
+            new OA\Property(property: 'total_amount', type: 'number', format: 'float', example: 12000),
+            new OA\Property(property: 'amount_paid', type: 'number', format: 'float', example: 0),
+            new OA\Property(property: 'description', type: 'string', nullable: true, example: 'Osun State Harmonised Bill'),
+            new OA\Property(property: 'authorization_url', type: 'string', nullable: true, example: 'https://osun.electroniccollectionsecg.com/pay/426878163229'),
+            new OA\Property(property: 'revenue_code', type: 'string', nullable: true, example: '4020154'),
+            new OA\Property(property: 'agency_code', type: 'string', nullable: true, example: '4100000'),
+            new OA\Property(property: 'payment_type', type: 'string', nullable: true, example: 'individual'),
+            new OA\Property(property: 'customer', type: 'object', nullable: true, properties: [
+                new OA\Property(property: 'id', type: 'string', nullable: true, example: '454368'),
+                new OA\Property(property: 'ipn', type: 'string', nullable: true, example: null),
+                new OA\Property(property: 'name', type: 'string', nullable: true, example: 'OLUJIDE JEREMIAH AMBEE'),
+                new OA\Property(property: 'email', type: 'string', nullable: true, example: null),
+                new OA\Property(property: 'phone', type: 'string', nullable: true, example: '07050710801'),
+                new OA\Property(property: 'address', type: 'string', nullable: true, example: 'ZY1, BOLORUNDURO OKE IYANU, ILESA.'),
+            ]),
+        ]),
+    ]
+)]
+#[OA\Schema(
     schema: 'GenerateInvoiceRequest',
     required: ['revenue_code', 'agency_code', 'amount', 'pid', 'payment_type'],
     type: 'object',

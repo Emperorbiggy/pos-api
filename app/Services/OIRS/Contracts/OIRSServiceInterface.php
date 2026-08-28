@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\OIRS\Contracts;
 
 use App\Services\OIRS\DTOs\InvoiceData;
+use App\Services\OIRS\DTOs\InvoiceDetailsData;
 use App\Services\OIRS\DTOs\PaymentNotificationData;
 use App\Services\OIRS\DTOs\PaymentValidationData;
 use App\Services\OIRS\Exceptions\OIRSException;
@@ -43,4 +44,11 @@ interface OIRSServiceInterface
         string $pid,
         string $paymentType
     ): InvoiceData;
+
+    /**
+     * Fetch an existing OIRS invoice by its IPN.
+     *
+     * @throws OIRSException
+     */
+    public function fetchInvoice(string $ipn): InvoiceDetailsData;
 }

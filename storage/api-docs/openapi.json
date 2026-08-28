@@ -1054,6 +1054,107 @@
                 ]
             }
         },
+        "/api/v1/invoices/{ipn}": {
+            "get": {
+                "tags": [
+                    "OIRS"
+                ],
+                "summary": "Fetch invoice",
+                "description": "Look up an existing OIRS invoice by its IPN. Served from the OIRS base URL. Authentication: Bearer token required.",
+                "operationId": "showInvoice",
+                "parameters": [
+                    {
+                        "name": "ipn",
+                        "in": "path",
+                        "description": "The invoice payment number to look up.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[A-Za-z0-9\\-]{1,50}$",
+                            "maxLength": 50
+                        },
+                        "example": "426878163229"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Invoice found.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InvoiceDetailsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "OIRS rejected the request on business grounds. The message is relayed verbatim.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No invoice exists for that IPN.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "OIRS is unreachable, returned an error of its own, or rejected the credentials this API uses.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/v1/payments": {
             "get": {
                 "tags": [
@@ -1458,6 +1559,101 @@
                                 "description": "Payment status reported by OIRS; the merchant payment record is moved to this value. Null when OIRS returns none.",
                                 "type": "string",
                                 "example": "paid",
+                                "nullable": true
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "InvoiceDetailsResponse": {
+                "properties": {
+                    "data": {
+                        "properties": {
+                            "ipn": {
+                                "type": "string",
+                                "example": "426878163229"
+                            },
+                            "status": {
+                                "type": "string",
+                                "example": "pending",
+                                "nullable": true
+                            },
+                            "amount": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 12000
+                            },
+                            "total_amount": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 12000
+                            },
+                            "amount_paid": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 0
+                            },
+                            "description": {
+                                "type": "string",
+                                "example": "Osun State Harmonised Bill",
+                                "nullable": true
+                            },
+                            "authorization_url": {
+                                "type": "string",
+                                "example": "https://osun.electroniccollectionsecg.com/pay/426878163229",
+                                "nullable": true
+                            },
+                            "revenue_code": {
+                                "type": "string",
+                                "example": "4020154",
+                                "nullable": true
+                            },
+                            "agency_code": {
+                                "type": "string",
+                                "example": "4100000",
+                                "nullable": true
+                            },
+                            "payment_type": {
+                                "type": "string",
+                                "example": "individual",
+                                "nullable": true
+                            },
+                            "customer": {
+                                "properties": {
+                                    "id": {
+                                        "type": "string",
+                                        "example": "454368",
+                                        "nullable": true
+                                    },
+                                    "ipn": {
+                                        "type": "string",
+                                        "example": null,
+                                        "nullable": true
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "OLUJIDE JEREMIAH AMBEE",
+                                        "nullable": true
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": null,
+                                        "nullable": true
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "07050710801",
+                                        "nullable": true
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "ZY1, BOLORUNDURO OKE IYANU, ILESA.",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object",
                                 "nullable": true
                             }
                         },
