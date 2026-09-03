@@ -41,6 +41,16 @@ class UserFactory extends Factory
     }
 
     /**
+     * An administrator, allowed to bulk import terminals.
+     */
+    public function admin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_admin' => true,
+        ]);
+    }
+
+    /**
      * A merchant who has registered but not yet created a PIN.
      */
     public function withoutPin(): static

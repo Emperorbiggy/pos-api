@@ -1279,6 +1279,88 @@
                     }
                 ]
             }
+        },
+        "/api/v1/terminals/import": {
+            "post": {
+                "tags": [
+                    "Terminals"
+                ],
+                "summary": "Bulk create terminal logins",
+                "description": "Upload a spreadsheet of terminals and create one login per terminal ID.\n\nThe sheet needs a header row with a \"Terminal ID\" column; \"Serial Number\" is\nused for the account name when present, and any other columns are ignored.\nHeader matching ignores case, spaces, underscores and hyphens.\n\nEach new account gets an email derived from its terminal ID\n(204401PG becomes 204401pg@<email_domain>) and a randomly generated\n12 character password.\n\nThe generated passwords are returned in this response and nowhere else:\nthey are hashed on the way into the database and cannot be read back\nafterwards. Capture them before closing the page.\n\nTerminals that already have a login are skipped and listed, so re-uploading\nthe same file is safe and will not disturb working accounts.\n\nAuthentication: Bearer token required.",
+                "operationId": "importTerminals",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "properties": {
+                                    "file": {
+                                        "description": "The .xlsx, .xls or .csv file. Maximum 5MB.",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "email_domain": {
+                                        "description": "Domain for the generated addresses. Defaults to the configured terminals.email_domain.",
+                                        "type": "string",
+                                        "example": "ecgpos.local"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Import finished. Check the summary: individual rows can fail without failing the upload.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TerminalImportResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The file is missing, the wrong type, too large, or has no Terminal ID column.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -1823,6 +1905,107 @@
                 },
                 "type": "object"
             },
+            "TerminalImportResponse": {
+                "description": "The created list carries every generated password. They are hashed in the database, so this response is the only place they can be read.",
+                "properties": {
+                    "data": {
+                        "properties": {
+                            "summary": {
+                                "properties": {
+                                    "processed": {
+                                        "type": "integer",
+                                        "example": 150
+                                    },
+                                    "created": {
+                                        "type": "integer",
+                                        "example": 148
+                                    },
+                                    "skipped": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "failed": {
+                                        "type": "integer",
+                                        "example": 0
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "created": {
+                                "description": "New logins, with their one-time passwords.",
+                                "type": "array",
+                                "items": {
+                                    "properties": {
+                                        "row": {
+                                            "description": "Row number in the uploaded sheet.",
+                                            "type": "integer",
+                                            "example": 2
+                                        },
+                                        "terminal_id": {
+                                            "type": "string",
+                                            "example": "204401PG"
+                                        },
+                                        "email": {
+                                            "type": "string",
+                                            "example": "204401pg@ecgpos.local"
+                                        },
+                                        "password": {
+                                            "type": "string",
+                                            "example": "k7Rm2QpXa9Tz"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "skipped": {
+                                "description": "Rows deliberately left alone, chiefly terminals that already have a login.",
+                                "type": "array",
+                                "items": {
+                                    "properties": {
+                                        "row": {
+                                            "type": "integer",
+                                            "example": 14
+                                        },
+                                        "terminal_id": {
+                                            "type": "string",
+                                            "example": "118222XX"
+                                        },
+                                        "reason": {
+                                            "type": "string",
+                                            "example": "A login already exists for this terminal."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "failed": {
+                                "description": "Rows that could not be imported. The rest of the file is still imported.",
+                                "type": "array",
+                                "items": {
+                                    "properties": {
+                                        "row": {
+                                            "type": "integer",
+                                            "example": 31
+                                        },
+                                        "terminal_id": {
+                                            "type": "string",
+                                            "example": null,
+                                            "nullable": true
+                                        },
+                                        "reason": {
+                                            "type": "string",
+                                            "example": "Terminal ID is empty."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
             "Payment": {
                 "properties": {
                     "id": {
@@ -2060,6 +2243,10 @@
         {
             "name": "Payments",
             "description": "Payments"
+        },
+        {
+            "name": "Terminals",
+            "description": "Terminals"
         }
     ]
 }

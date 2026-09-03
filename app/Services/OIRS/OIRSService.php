@@ -167,7 +167,7 @@ final class OIRSService implements OIRSServiceInterface
             $response = $this->request($baseUrl)->get($endpoint, $query);
         } catch (RequestException $exception) {
             $response = $exception->response;
-            $message = $this->responseMessage($response) ?? 'OIRS returned an unsuccessful HTTP response.';
+            $message = $this->responseMessage($response) ?? $this->statusMessage($response->status());
 
             $this->logFailure('OIRS HTTP request failed.', [
                 'endpoint' => $endpoint,
@@ -195,7 +195,7 @@ final class OIRSService implements OIRSServiceInterface
         }
 
         if ($response->failed()) {
-            $message = $this->responseMessage($response) ?? 'OIRS returned an unsuccessful HTTP response.';
+            $message = $this->responseMessage($response) ?? $this->statusMessage($response->status());
 
             $this->logFailure('OIRS HTTP request failed.', [
                 'endpoint' => $endpoint,
@@ -270,7 +270,7 @@ final class OIRSService implements OIRSServiceInterface
             $response = $this->request($baseUrl)->post($endpoint, $payload);
         } catch (RequestException $exception) {
             $response = $exception->response;
-            $message = $this->responseMessage($response) ?? 'OIRS returned an unsuccessful HTTP response.';
+            $message = $this->responseMessage($response) ?? $this->statusMessage($response->status());
 
             $this->logFailure('OIRS HTTP request failed.', [
                 'endpoint' => $endpoint,
@@ -298,7 +298,7 @@ final class OIRSService implements OIRSServiceInterface
         }
 
         if ($response->failed()) {
-            $message = $this->responseMessage($response) ?? 'OIRS returned an unsuccessful HTTP response.';
+            $message = $this->responseMessage($response) ?? $this->statusMessage($response->status());
 
             $this->logFailure('OIRS HTTP request failed.', [
                 'endpoint' => $endpoint,
@@ -502,6 +502,23 @@ final class OIRSService implements OIRSServiceInterface
 
         return $exception instanceof RequestException
             && $exception->response->serverError();
+    }
+
+    /**
+     * Describe a failure OIRS reported without a message of its own.
+     *
+     * A bare status code tells a cashier nothing, and "unsuccessful HTTP
+     * response" tells them less. 401/403 in particular are about the app key
+     * this API sends, not anything the caller did.
+     */
+    private function statusMessage(int $status): string
+    {
+        return match ($status) {
+            401, 403 => 'OIRS rejected this request. The app key may be invalid, or not permitted to use this endpoint.',
+            404 => 'OIRS has no record matching that reference.',
+            429 => 'OIRS is rate limiting this terminal. Try again shortly.',
+            default => sprintf('OIRS returned an unsuccessful HTTP response (status %d).', $status),
+        };
     }
 
     private function baseUrl(): string

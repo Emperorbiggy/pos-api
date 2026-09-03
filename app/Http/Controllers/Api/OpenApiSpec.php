@@ -239,6 +239,37 @@ use OpenApi\Attributes as OA;
     ]
 )]
 #[OA\Schema(
+    schema: 'TerminalImportResponse',
+    description: 'The created list carries every generated password. They are hashed in the database, so this response is the only place they can be read.',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'data', type: 'object', properties: [
+            new OA\Property(property: 'summary', type: 'object', properties: [
+                new OA\Property(property: 'processed', type: 'integer', example: 150),
+                new OA\Property(property: 'created', type: 'integer', example: 148),
+                new OA\Property(property: 'skipped', type: 'integer', example: 2),
+                new OA\Property(property: 'failed', type: 'integer', example: 0),
+            ]),
+            new OA\Property(property: 'created', description: 'New logins, with their one-time passwords.', type: 'array', items: new OA\Items(properties: [
+                new OA\Property(property: 'row', description: 'Row number in the uploaded sheet.', type: 'integer', example: 2),
+                new OA\Property(property: 'terminal_id', type: 'string', example: '204401PG'),
+                new OA\Property(property: 'email', type: 'string', example: '204401pg@ecgpos.local'),
+                new OA\Property(property: 'password', type: 'string', example: 'k7Rm2QpXa9Tz'),
+            ], type: 'object')),
+            new OA\Property(property: 'skipped', description: 'Rows deliberately left alone, chiefly terminals that already have a login.', type: 'array', items: new OA\Items(properties: [
+                new OA\Property(property: 'row', type: 'integer', example: 14),
+                new OA\Property(property: 'terminal_id', type: 'string', example: '118222XX'),
+                new OA\Property(property: 'reason', type: 'string', example: 'A login already exists for this terminal.'),
+            ], type: 'object')),
+            new OA\Property(property: 'failed', description: 'Rows that could not be imported. The rest of the file is still imported.', type: 'array', items: new OA\Items(properties: [
+                new OA\Property(property: 'row', type: 'integer', example: 31),
+                new OA\Property(property: 'terminal_id', type: 'string', nullable: true, example: null),
+                new OA\Property(property: 'reason', type: 'string', example: 'Terminal ID is empty.'),
+            ], type: 'object')),
+        ]),
+    ]
+)]
+#[OA\Schema(
     schema: 'Payment',
     type: 'object',
     properties: [

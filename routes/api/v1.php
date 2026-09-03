@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\OIRSController;
 use App\Http\Controllers\Api\V1\PaymentController;
+use App\Http\Controllers\Api\V1\TerminalImportController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function (): void {
@@ -34,6 +35,14 @@ Route::prefix('auth')->group(function (): void {
 });
 
 Route::middleware('auth:api')->group(function (): void {
+    // Creates accounts in bulk, so it is throttled: one upload can mint hundreds
+    // of logins, and a runaway client should not be able to repeat that freely.
+    // Admin only: one upload mints hundreds of logins and returns their
+    // passwords, so an ordinary terminal must never reach it. Throttled too,
+    // since a runaway client should not be able to repeat that freely.
+    Route::post('terminals/import', [TerminalImportController::class, 'store'])
+        ->middleware(['admin', 'throttle:5,1']);
+
     Route::get('payments', [PaymentController::class, 'index']);
 
     Route::post('validate-ipn', [OIRSController::class, 'validateIpn']);
