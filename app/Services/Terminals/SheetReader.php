@@ -16,10 +16,41 @@ use Throwable;
 final class SheetReader
 {
     /**
+     * Create the scratch directory the reader unpacks uploads into.
+     *
+     * Every format goes through it, CSV included, so a missing or unwritable
+     * directory fails each of them with the same opaque error. A fresh checkout
+     * has no storage/framework/cache/laravel-excel, and nothing else creates it.
+     */
+    private function ensureTemporaryPathExists(): void
+    {
+        $path = config('excel.temporary_files.local_path');
+
+        if (! is_string($path) || $path === '') {
+            return;
+        }
+
+        if (! is_dir($path)) {
+            // Suppressed: a race with a concurrent upload is harmless, and an
+            // unwritable parent is reported by the check below instead.
+            @mkdir($path, 0775, true);
+        }
+
+        if (! is_dir($path) || ! is_writable($path)) {
+            throw new TerminalImportException(
+                'The server cannot write its temporary import directory. '.
+                "Create {$path} and make it writable by the web user."
+            );
+        }
+    }
+
+    /**
      * @return list<list<string|null>> The first row is the header.
      */
     public function rows(UploadedFile $file): array
     {
+        $this->ensureTemporaryPathExists();
+
         try {
             $sheets = Excel::toArray(new RawSheetImport, $file);
         } catch (Throwable $exception) {
