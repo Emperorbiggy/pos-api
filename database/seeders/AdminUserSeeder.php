@@ -23,7 +23,7 @@ final class AdminUserSeeder extends Seeder
         // a stale config cache resolves these keys to null, and casting that to
         // a string would quietly seed an account with an empty email that can
         // never log in. Defaults keep the seeder correct either way.
-        $email = $this->setting('services.terminals.admin_email', 'admin@ecgpos.local');
+        $email = $this->setting('services.terminals.admin_email', 'admin@ecgpos.com');
         $name = $this->setting('services.terminals.admin_name', 'ECG POS Administrator');
         $terminalId = $this->setting('services.terminals.admin_terminal_id', 'ADMIN-001');
 
