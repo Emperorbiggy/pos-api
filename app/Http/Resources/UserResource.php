@@ -22,6 +22,10 @@ final class UserResource extends JsonResource
             // Lets a client decide between "create a PIN" and "enter your PIN"
             // without ever exposing the PIN itself.
             'has_pin' => $this->resource->pin !== null,
+            // Lets the admin panel show or withhold its own navigation. This is
+            // a convenience for the UI, never the access control itself: the
+            // admin middleware is what actually guards those routes.
+            'is_admin' => (bool) $this->resource->is_admin,
             'created_at' => $this->resource->created_at?->toIso8601String(),
         ];
     }

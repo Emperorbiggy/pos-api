@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\Admin\TerminalController;
+use App\Http\Controllers\Api\V1\Admin\TransactionController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\OIRSController;
 use App\Http\Controllers\Api\V1\PaymentController;
@@ -50,4 +52,17 @@ Route::middleware('auth:api')->group(function (): void {
     Route::post('invoices', [OIRSController::class, 'generateInvoice']);
     Route::get('invoices/{ipn}', [OIRSController::class, 'showInvoice'])
         ->where('ipn', '[A-Za-z0-9\-]{1,50}');
+
+    // Every route here reads or rewrites other merchants' data, so the whole
+    // group sits behind the admin gate rather than trusting each controller.
+    Route::prefix('admin')->middleware('admin')->group(function (): void {
+        Route::get('terminals', [TerminalController::class, 'index']);
+        Route::get('terminals/{user}', [TerminalController::class, 'show']);
+        Route::match(['put', 'patch'], 'terminals/{user}', [TerminalController::class, 'update']);
+
+        // Declared before the collection route so "summary" is not swallowed
+        // as a transaction identifier.
+        Route::get('transactions/summary', [TransactionController::class, 'summary']);
+        Route::get('transactions', [TransactionController::class, 'index']);
+    });
 });
