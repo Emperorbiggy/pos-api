@@ -477,7 +477,7 @@ final class OIRSService implements OIRSServiceInterface
             ->baseUrl($baseUrl ?? $this->baseUrl())
             ->acceptJson()
             ->asJson()
-            ->timeout(30)
+            ->timeout(120)
             // throw: false so a failed response comes back to us instead of
             // escaping as an unhandled RequestException; the $response->failed()
             // branches below turn it into an OIRSException carrying the upstream
